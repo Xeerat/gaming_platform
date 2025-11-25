@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, pool
 from alembic import context
 from os import getenv 
 from dotenv import load_dotenv
+from app.migration.models import Base
 
 #=========================================================
 # Настройка логирования 
@@ -12,7 +13,7 @@ from dotenv import load_dotenv
 config = context.config
 # Проверяем есть ли он
 if config.config_file_name is not None:
-    # Настраивать логирование в соответствии с параметрами в config
+    # Настраиваем логирование в соответствии с параметрами в config
     fileConfig(config.config_file_name)
 
 #=========================================================
@@ -20,15 +21,17 @@ if config.config_file_name is not None:
 #=========================================================
 
 # В данную переменную передаются модели SQLAlchemy 
-target_metadata = None
+target_metadata = Base.metadata
 
 #=========================================================
 # Создание URL для связи с базой данных
 #=========================================================
 
+# Загружаем переменные среды из файла .env
 load_dotenv()
 
 def get_database_url() -> str:
+    """ Функция, которая формирует URL для взаимодействия с базой данных. """
     user = getenv("DB_USER")
     password = getenv("DB_PASSWORD")
     host = getenv("DB_HOST")
@@ -43,20 +46,17 @@ DB_URL = get_database_url()
 #=========================================================
 
 def run_migrations_offline() -> None:
-    """
-    Функция для генерации SQL-скрипта, без подключения к базе данных.
+    """ 
+    Функция для генерации SQL-скрипта без дальнейшего выполнения.
+    Подключение к базе данных не происходит.
     """
     # Настройка alembic для работы с базой
     context.configure(
-        # Адрес базы 
         url=DB_URL,
         target_metadata=target_metadata,
-        # Если параметр включен, то создаем sql запрос с конкретными значениями,
-        # который сразу можно применить к базе данных. 
-        # Иначе создается sql запрос будет содержать переменные, которые еще необходимо будет потом вставить
+        # Вставлять ли конкретные значения в sql-запрос или добавлять переменные?
         literal_binds=True,
-        # Тут обрабатывается, как оформлять переменные в sql запросе
-        # В сочетании с literal_binds=True не играет роли
+        # Вид переменных в sql-запросе. В сочетании с literal_binds=True не играет роли
         dialect_opts={"paramstyle": "named"},
     )
 
@@ -74,19 +74,16 @@ def run_migrations_offline() -> None:
 #=========================================================
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
+    """ 
+    Функция для генерации и дальнейшего выполнения SQL-скрипта.
+    Происходит подключение к базе данных.
     """
     # Создается объект SQLAlchemy Engine 
-    # poolclass=pool.NullPool делает так, что никакое соединение не кешировалось,
-    # то есть чтобы каждый раз создавалось новое соединение
+    # poolclass=pool.NullPool делает так, чтобы каждый раз создавалось новое соединение, а старое не сохранялось
     connectable = create_engine(DB_URL, poolclass=pool.NullPool)
     # Создается соединение
     with connectable.connect() as connection:
-        # Указываем alembic на каком соединении выполнять миграции
+        # Настраиваем alembic для работы с базой
         context.configure(
             connection=connection, target_metadata=target_metadata
         )
@@ -98,7 +95,6 @@ def run_migrations_online() -> None:
 # Выбор режима в зависимости от запуска alembic
 #=========================================================
 
-# Если был запущен в оффлайн режиме, то оффлайн миграциия
 if context.is_offline_mode():
     run_migrations_offline()
 else:
