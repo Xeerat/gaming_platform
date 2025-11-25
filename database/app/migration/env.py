@@ -14,6 +14,7 @@ from app.database import DATABASE_URL, Base
 
 from app.users.models import User
 from app.friends.models import Friend_Request, Friends
+from app.maps.models import Maps
 
 config = context.config
 config.set_main_option("sqlalchemy.url", DATABASE_URL)

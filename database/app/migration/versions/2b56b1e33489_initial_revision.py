@@ -1,8 +1,8 @@
-"""create friend_requests and friends tables
+"""initial revision
 
-Revision ID: 8f662ed5d15c
-Revises: d6fc04804c8f
-Create Date: 2025-11-17 15:01:47.902669
+Revision ID: 2b56b1e33489
+Revises: 
+Create Date: 2025-11-25 19:28:48.387107
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '8f662ed5d15c'
-down_revision: Union[str, Sequence[str], None] = 'd6fc04804c8f'
+revision: str = '2b56b1e33489'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -28,15 +28,16 @@ def upgrade() -> None:
     sa.Column('password', sa.String(), nullable=False),
     sa.Column('register_at', sa.DateTime(), server_default=sa.text("TIMEZONE('utc', now())"), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email')
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('username')
     )
     op.create_table('friend_requests',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('from_user_id', sa.Integer(), nullable=False),
     sa.Column('to_user_id', sa.Integer(), nullable=False),
     sa.Column('send_at', sa.DateTime(), server_default=sa.text("TIMEZONE('utc', now())"), nullable=False),
-    sa.ForeignKeyConstraint(['from_user_id'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['to_user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['from_user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['to_user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('friends',
@@ -44,8 +45,8 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('friend_id', sa.Integer(), nullable=False),
     sa.Column('at', sa.DateTime(), server_default=sa.text("TIMEZONE('utc', now())"), nullable=False),
-    sa.ForeignKeyConstraint(['friend_id'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['friend_id'], ['users.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
