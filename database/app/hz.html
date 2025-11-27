@@ -2,38 +2,27 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Пиксельный редактор карты</title>
+<title>Phaser Pixel Map Editor</title>
 <style>
-  #canvas {
-    border: 1px solid black;
-    image-rendering: pixelated; /* важен для маленьких пикселей */
-  }
-  .tile-palette {
-    display: flex;
-    margin-bottom: 10px;
-  }
-  .tile {
-    width: 16px;
-    height: 16px;
-    border: 1px solid #555;
-    cursor: pointer;
-    margin-right: 5px;
-  }
-  .selected {
-    border: 2px solid red;
-  }
+  body { margin:0; } /* Убираем отступы у страницы */
+  #palette { display:flex; margin:10px; } /* Контейнер для палитры тайлов */
+  .tile { width:32px; height:32px; margin-right:5px; cursor:pointer; border:1px solid #555; } /* Тайлы в палитре */
+  .selected { border:3px solid red; } /* Выделенный тайл */
+  #saveBtn { margin:10px; padding:5px 10px; font-size:16px; } /* Кнопка сохранения */
 </style>
+<!-- Подключаем Phaser 3 через CDN -->
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
 </head>
 <body>
 
-<div class="tile-palette" id="palette"></div>
-<canvas id="canvas"></canvas>
+<!-- Контейнер для палитры -->
+<div id="palette"></div>
 
-<div class="tile-palette" id="palette"></div>
+<!-- Кнопка сохранения карты -->
 <button id="saveBtn">Сохранить карту</button>
-<canvas id="canvas"></canvas>
 
-
+<!-- Подключение JS редактора -->
 <script src="editor.js"></script>
+
 </body>
 </html>

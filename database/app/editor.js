@@ -1,314 +1,234 @@
-// Получаем HTML-элемент <canvas> по ID "canvas"
-const canvas = document.getElementById('canvas');
+// ------------------------------------
+// Настройки тайлов и карты
+// ------------------------------------
 
-// Получаем 2D-контекст — объект для рисования в canvas
-const ctx = canvas.getContext('2d');
+// Размер тайла в пикселях (каждый "пиксель" карты)
+const tileSize = 16;
 
-// Размер одного тайла (пикселя карты) в пикселях экрана
-const tileSize = 8;
-
-
-
-// -------------------------------------------------------------
-//                 ОПРЕДЕЛЕНИЕ ДОСТУПНЫХ ТАЙЛОВ
-// -------------------------------------------------------------
-
-// Массив тайлов, каждый тайл имеет id и цвет.
-// В будущем вместо цветов можно вставить изображения.
+// Массив доступных тайлов. Каждый тайл имеет id и цвет в HEX
 const tiles = [
-  {id: 0, color: 'white'},  // id=0 → пустота
-  {id: 1, color: 'green'},  // id=1 → трава
-  {id: 2, color: 'brown'},  // id=2 → земля
-  {id: 3, color: 'blue'},   // id=3 → вода
-  {id: 4, color: 'gray'}    // id=4 → камень
+    {id:0, color:'#ffffff'}, // пустой белый
+    {id:1, color:'#00ff00'}, // зелёная трава
+    {id:2, color:'#8B4513'}, // коричневая земля
+    {id:3, color:'#0000ff'}, // синий вода
+    {id:4, color:'#808080'}  // серый камень
 ];
 
-// ID тайла, который выбран для рисования
+// Тайл, который выбран для рисования (по умолчанию трава)
 let selectedTile = 1;
 
+// Ширина и высота карты в тайлах
+const mapWidth = 100;
+const mapHeight = 60;
 
+// -----------------------------
+// ПАЛИТРА ТАЙЛОВ
+// -----------------------------
 
-// -------------------------------------------------------------
-//                ПАРАМЕТРЫ И ДАННЫЕ КАРТЫ
-// -------------------------------------------------------------
-
-// Главная переменная, где хранится вся карта (2D массив)
-let map = [];
-
-// Ширина карты (в тайлах)
-let mapWidth = 100;
-
-// Высота карты (в тайлах)
-let mapHeight = 60;
-
-
-
-// -------------------------------------------------------------
-//           ФУНКЦИЯ: СОЗДАНИЕ ПУСТОЙ КАРТЫ
-// -------------------------------------------------------------
-
-// Создаёт карту width×height, заполненную ID 0 (пусто)
-function createEmptyMap(width, height) {
-  // Создаёт массив высотой height,
-  // внутри каждый элемент — массив шириной width из нулей
-  return Array.from({length: height}, () =>
-    Array(width).fill(0)
-  );
-}
-
-
-
-// -------------------------------------------------------------
-//            ФУНКЦИЯ: ГЕНЕРАЦИЯ ПРИМЕРНОЙ КАРТЫ
-// -------------------------------------------------------------
-
-function createExampleMap(width, height) {
-
-  // Создаём 2D-массив
-  return Array.from({length: height}, (_, y) => 
-    Array.from({length: width}, (_, x) => {
-
-      // 1. Каменные границы вокруг всей карты
-      if (y === 0 || y === height-1 || x === 0 || x === width-1)
-        return 4; // камень
-
-      // 2. Прямоугольник земли в средней области
-      if (y > 20 && y < 25 && x > 30 && x < 70)
-        return 2; // земля
-
-      // 3. Немного "случайной" воды
-      if ((x + y) % 10 === 0)
-        return 3; // вода
-
-      // 4. Всё остальное — трава
-      return 1;
-    })
-  );
-}
-
-
-
-// -------------------------------------------------------------
-//      ФУНКЦИЯ: УСТАНОВИТЬ КАРТУ ДЛЯ ОТОБРАЖЕНИЯ
-// -------------------------------------------------------------
-
-function setMap(matrix) {
-
-  // Сохраняем размеры карты
-  mapHeight = matrix.length;
-  mapWidth = matrix[0].length;
-
-  // Копируем матрицу (чтобы не менять её напрямую)
-  map = matrix.map(row => [...row]);
-
-  // Меняем размер canvas под реальные размеры карты
-  canvas.width = mapWidth * tileSize;
-  canvas.height = mapHeight * tileSize;
-
-  // Отрисовываем карту
-  drawMap();
-}
-
-
-
-// -------------------------------------------------------------
-//                 СОЗДАНИЕ ПАЛИТРЫ ТАЙЛОВ
-// -------------------------------------------------------------
-
-// Получаем div, куда будем вставлять элементы палитры
+// Получаем HTML-контейнер для палитры
 const paletteDiv = document.getElementById('palette');
 
-// Генерация кнопок тайлов
+// Для каждого тайла создаём квадрат в палитре
 tiles.forEach(tile => {
 
-  // Создаём HTML-элемент div — квадрат 16×16
-  const tileDiv = document.createElement('div');
+    // Создаём div для тайла
+    const div = document.createElement('div');
 
-  // Добавляем класс стилей .tile
-  tileDiv.classList.add('tile');
+    // Добавляем CSS класс .tile
+    div.classList.add('tile');
 
-  // Красим div в цвет тайла
-  tileDiv.style.background = tile.color;
+    // Задаём цвет фона div
+    div.style.background = tile.color;
 
-  // При клике выбираем этот тайл
-  tileDiv.addEventListener('click', () => {
+    // Обработчик клика по тайлу
+    div.addEventListener('click', () => {
 
-    // Запоминаем его ID, чтобы рисовать этим цветом
-    selectedTile = tile.id;
+        // Запоминаем выбранный тайл
+        selectedTile = tile.id;
 
-    // Убираем выделение со всех тайлов
-    document.querySelectorAll('.tile').forEach(t =>
-      t.classList.remove('selected')
-    );
+        // Снимаем выделение со всех тайлов
+        document.querySelectorAll('.tile').forEach(t => t.classList.remove('selected'));
 
-    // Выделяем текущий
-    tileDiv.classList.add('selected');
-  });
-
-  // Отмечаем выбранный по умолчанию
-  if (tile.id === selectedTile) tileDiv.classList.add('selected');
-
-  // Добавляем тайл в палитру
-  paletteDiv.appendChild(tileDiv);
-});
-
-
-
-// -------------------------------------------------------------
-//                 ОТРИСОВКА ВСЕЙ КАРТЫ
-// -------------------------------------------------------------
-
-function drawMap() {
-
-  // Очищаем canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Проходим по каждому тайлу карты
-  for (let y = 0; y < mapHeight; y++) {
-    for (let x = 0; x < mapWidth; x++) {
-
-      // Получаем объект тайла по его ID
-      const tile = tiles[map[y][x]] || tiles[0];
-
-      // Устанавливаем цвет
-      ctx.fillStyle = tile.color;
-
-      // Рисуем квадрат (тайл)
-      ctx.fillRect(
-        x * tileSize,
-        y * tileSize,
-        tileSize,
-        tileSize
-      );
-    }
-  }
-}
-
-
-
-// -------------------------------------------------------------
-//            ВЗАИМОДЕЙСТВИЕ С МЫШЬЮ — РИСОВАНИЕ
-// -------------------------------------------------------------
-
-let isDrawing = false;
-
-// Когда нажата кнопка мыши → начать рисовать
-canvas.addEventListener('mousedown', e => {
-  isDrawing = true;
-  drawTile(e); // рисуем сразу в момент клика
-});
-
-// Когда отпускаем кнопку мыши → перестать рисовать
-canvas.addEventListener('mouseup', () => {
-  isDrawing = false;
-});
-
-// Если ушли курсором с canvas → перестать рисовать
-canvas.addEventListener('mouseleave', () => {
-  isDrawing = false;
-});
-
-// Движение мыши → рисуем, только если зажата кнопка
-canvas.addEventListener('mousemove', e => {
-  if (isDrawing) drawTile(e);
-});
-
-
-
-// -------------------------------------------------------------
-//          ФУНКЦИЯ: ИЗМЕНИТЬ КОНКРЕТНЫЙ ТАЙЛ
-// -------------------------------------------------------------
-
-function drawTile(e) {
-
-  // Получаем координаты canvas на странице
-  const rect = canvas.getBoundingClientRect();
-
-  // Вычисляем координаты тайла, по которому кликнули
-  const x = Math.floor((e.clientX - rect.left) / tileSize);
-  const y = Math.floor((e.clientY - rect.top) / tileSize);
-
-  // Проверяем, попали ли в карту
-  if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight) {
-
-    // Меняем значение в матрице
-    map[y][x] = selectedTile;
-
-    // Перерисовываем всю карту
-    drawMap();
-  }
-}
-
-
-
-// -------------------------------------------------------------
-//      ФУНКЦИЯ: ВЕРНУТЬ ТЕКУЩУЮ МАТРИЦУ (копию)
-// -------------------------------------------------------------
-
-function getMap() {
-  // Возвращаем новую копию массива, чтобы не ломали оригинал
-  return map.map(row => [...row]);
-}
-
-
-
-// -------------------------------------------------------------
-//        ИНИЦИАЛИЗАЦИЯ: ЗАГРУЗКА ПРИМЕРНОЙ КАРТЫ
-// -------------------------------------------------------------
-
-setMap(createExampleMap(mapWidth, mapHeight));
-
-
-
-// -------------------------------------------------------------
-//              СОХРАНЕНИЕ КАРТЫ В БАЗУ ЧЕРЕЗ API
-// -------------------------------------------------------------
-
-document.getElementById('saveBtn').addEventListener('click', async () => {
-
-  // Получаем текущую карту как 2D-массив
-  const matrix = getMap();
-
-  // Спрашиваем у пользователя название карты
-  const mapName = prompt("Введите название карты:");
-
-  // Если пусто — не сохраняем
-  if (!mapName) {
-    alert("Название обязательно!");
-    return;
-  }
-
-  try {
-
-    // Отправляем POST-запрос на backend FastAPI
-    const response = await fetch("http://localhost:8000/map/add_map/", {
-      method: "POST",
-
-      // Заголовки
-      headers: {
-        "Content-Type": "application/json",
-
-        // JWT токен авторизации (если используется)
-        "Authorization": "Bearer " + localStorage.getItem("token")
-      },
-
-      // Содержимое запроса — JSON с именем и матрицей
-      body: JSON.stringify({
-        map_name: mapName,
-        matrix: matrix
-      })
+        // Выделяем текущий тайл
+        div.classList.add('selected');
     });
 
-    // Если сервер вернул ошибку
-    if (!response.ok) {
-      throw new Error("Ошибка сохранения");
+    // Если это выбранный тайл по умолчанию — выделяем
+    if(tile.id === selectedTile) div.classList.add('selected');
+
+    // Добавляем тайл в палитру
+    paletteDiv.appendChild(div);
+});
+
+// ------------------------------------
+// Phaser 3 конфигурация
+// ------------------------------------
+const config = {
+    type: Phaser.AUTO,                  // Phaser выбирает WebGL или Canvas автоматически
+    width: mapWidth * tileSize,         // ширина canvas в пикселях
+    height: mapHeight * tileSize,       // высота canvas
+    backgroundColor: '#ffffff',         // цвет фона сцены
+    scene: {                            // сцена Phaser
+        preload: preload,               // функция загрузки ресурсов
+        create: create,                 // функция создания сцены
+        update: update                  // функция обновления сцены каждый кадр
+    }
+};
+
+// Создаём Phaser Game
+const game = new Phaser.Game(config);
+
+// Переменная для графики (рисование тайлов)
+let graphics;
+
+// 2D массив карты (каждая ячейка хранит id тайла)
+let mapMatrix = [];
+
+// ------------------------------------
+// Функции для карты
+// ------------------------------------
+
+// Создаёт пустую карту width x height (все тайлы 0)
+function createEmptyMap(width, height){
+    return Array.from({length: height}, ()=>Array(width).fill(0));
+}
+
+// Генерация примерной карты с границами, землёй и водой
+function createExampleMap(width, height){
+    return Array.from({length: height}, (_, y) =>
+        Array.from({length: width}, (_, x) => {
+            if(y===0 || y===height-1 || x===0 || x===width-1) return 4;   // каменные границы
+            if(y>20 && y<25 && x>30 && x<70) return 2;                     // земля в центре
+            if((x+y)%10===0) return 3;                                     // случайные водяные тайлы
+            return 1;                                                      // остальная трава
+        })
+    );
+}
+
+// ------------------------------------
+// Phaser сцена
+// ------------------------------------
+function preload(){
+    // Здесь можно загружать картинки/спрайты, пока пусто
+}
+
+function create(){
+    // Создаём объект для рисования
+    graphics = this.add.graphics();
+
+    // Создаём стартовую карту
+    mapMatrix = createExampleMap(mapWidth, mapHeight);
+
+    // Отрисовываем карту на экране
+    drawMap();
+
+    // Обработчики мыши для рисования
+    this.input.on('pointerdown', pointer => {
+        drawTile(pointer);                 // рисуем по клику
+        this.input.on('pointermove', drawTile); // рисуем при перемещении мыши
+    });
+
+    this.input.on('pointerup', () => {
+        this.input.off('pointermove', drawTile); // останавливаем рисование
+    });
+}
+
+function update(){
+    // Можно обновлять анимацию, пока оставляем пустым
+}
+
+// ------------------------------------
+// Рисуем карту
+// ------------------------------------
+function drawMap(){
+    graphics.clear(); // очищаем canvas перед рисованием
+
+    for(let y=0; y<mapHeight; y++){
+        for(let x=0; x<mapWidth; x++){
+            // Получаем id тайла
+            const tileId = mapMatrix[y][x];
+
+            // Получаем цвет тайла
+            const color = Phaser.Display.Color.HexStringToColor(tiles[tileId].color).color;
+
+            // Задаём цвет для заливки
+            graphics.fillStyle(color, 1);
+
+            // Рисуем прямоугольник тайла
+            graphics.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+
+            // Добавляем сетку для видимости тайлов
+            graphics.lineStyle(1, 0x000000, 0.2);
+            graphics.strokeRect(x*tileSize, y*tileSize, tileSize, tileSize);
+        }
+    }
+}
+
+// ------------------------------------
+// Рисуем тайл по клику мыши
+// ------------------------------------
+function drawTile(pointer){
+    // Вычисляем координаты тайла в массиве
+    const x = Math.floor(pointer.x / tileSize);
+    const y = Math.floor(pointer.y / tileSize);
+
+    // Проверяем границы карты
+    if(x>=0 && x<mapWidth && y>=0 && y<mapHeight){
+        // Обновляем матрицу карты
+        mapMatrix[y][x] = selectedTile;
+
+        // Перерисовываем карту
+        drawMap();
+    }
+}
+
+// ------------------------------------
+// Получить копию текущей матрицы карты
+// ------------------------------------
+function getMap(){
+    return mapMatrix.map(row => [...row]);
+}
+
+// ------------------------------------
+// Сохранение карты через API
+// ------------------------------------
+document.getElementById('saveBtn').addEventListener('click', async () => {
+    // Получаем текущую карту как 2D массив
+    const matrix = getMap();
+
+    // Спрашиваем у пользователя название карты
+    const mapName = prompt("Введите название карты:");
+
+    // Если пользователь не ввёл название — прекращаем сохранение
+    if(!mapName){
+        alert("Название обязательно!");
+        return;
     }
 
-    // Если всё ок — выводим сообщение
-    alert("Карта сохранена!");
+    try {
+        // Отправляем POST-запрос на backend (FastAPI)
+        const response = await fetch("http://localhost:8000/map/add_map/", {
+            method: "POST",
 
-  } catch (error) {
-    console.error(error);
-    alert("Не удалось сохранить карту");
-  }
+            // Заголовки запроса
+            headers:{
+                "Content-Type":"application/json",  // мы отправляем JSON
+                "Authorization":"Bearer " + localStorage.getItem("token") // если используем JWT
+            },
+
+            // Тело запроса — JSON объект с именем карты и матрицей
+            body: JSON.stringify({ map_name: mapName, matrix: matrix })
+        });
+
+        // Если сервер вернул ошибку (status >=400)
+        if(!response.ok) throw new Error("Ошибка сохранения");
+
+        // Всё прошло успешно — уведомляем пользователя
+        alert("Карта сохранена!");
+    } catch(e){
+        // Если произошла ошибка при запросе — выводим в консоль и показываем alert
+        console.error(e);
+        alert("Не удалось сохранить карту");
+    }
 });
+
