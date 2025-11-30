@@ -1,0 +1,113 @@
+/* Фиолетовая пастельная палитра */
+* {
+  --purple-light: #f3e8ff;   /* светлый фон контента и кнопок */
+  --purple-mid: #a87cef;     /* основной цвет кнопок и hover */
+  --purple-strong: #7e57c2;  /* насыщенный фиолетовый для sidebar */
+  --purple-border: #d1b3ff;  /* светлая граница */
+}
+
+body{
+  margin:0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display:flex;
+  height:100vh;
+  background: var(--purple-light);
+}
+
+.content{
+  flex:3;
+  padding:30px;
+  background: var(--purple-light);
+  border-radius: 12px;
+  margin: 20px;
+}
+
+.sidebar{
+  flex:1;
+  background: var(--purple-strong);
+  border-left: 2px solid var(--purple-border);
+  padding:25px;
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+  border-radius: 12px 0 0 12px;
+}
+
+button{
+  padding:14px;
+  border:none;
+  background: var(--purple-mid);
+  color:white;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:16px;
+  font-weight:600;
+  transition:0.25s ease;
+  border: 2px solid var(--purple-strong);
+}
+
+button:hover{
+  background: var(--purple-strong);
+  transform: translateY(-2px);
+}
+
+.sidebar {
+  position: relative;
+}
+
+.logout-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+
+  padding: 8px 14px;             
+  font-size: 14px;           
+  font-weight: 600;
+
+  background: var(--purple-mid);  
+  color: white;
+  border-radius: 10px;
+  border: 2px solid var(--purple-strong);
+
+  transition: 0.25s ease;
+  cursor: pointer;
+}
+
+/* Ховер красиво вписывается */
+.logout-btn:hover {
+  background: var(--purple-strong);
+  transform: translateY(-2px);
+}
+
+.notification {
+    position: fixed;
+    top: 20px;    
+    left: 20px;         
+    padding: 16px 20px;
+    border-radius: 8px;
+    color: white;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 300px;
+}
+
+.notification.success {
+    background: #10b981;
+    border-left: 4px solid #059669;
+}
+
+.notification.error {
+    background: #ef4444;
+    border-left: 4px solid #dc2626;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    float: right;
+    margin-left: 10px;
+}

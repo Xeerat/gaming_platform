@@ -2,12 +2,13 @@ from passlib.context import CryptContext
 from pydantic import EmailStr
 from datetime import datetime, timedelta, timezone
 from jose import jwt
+from fastapi import HTTPException, status
 
 from app.dao.dao_models import UsersDAO
 from app.database import get_auth_data
 
 #=========================================================
-# Создание токена
+# Шифрование токена
 #=========================================================
 
 # Создаем объект для хеширования паролей
@@ -23,8 +24,25 @@ def create_access_token(data: dict) -> str:
     # Получаем особые данные
     auth_data = get_auth_data()
     # Создаем токен для пользователя
-    encode_jwt = jwt.encode(to_encode, auth_data['secret_key'], algorithm=auth_data['algorithm'])
-    return encode_jwt
+    try:
+        encode_jwt = jwt.encode(to_encode, auth_data['secret_key'], algorithm=auth_data['algorithm'])
+        return encode_jwt
+    except Exception as e:
+        raise ValueError(f"Не удалось создать токен: {e}")
+
+
+
+#=========================================================
+# Шифрование токена
+#=========================================================
+
+def decode_access_token(token: str) -> dict:
+    """ Функция для расшифровки токена """
+    to_decode = token
+
+    auth_data = get_auth_data()
+    user_data = jwt.decode(to_decode, auth_data['secret_key'], auth_data['algorithm'])
+    return user_data
 
 #=========================================================
 # Хеширование пароля

@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field 
+from pydantic import BaseModel, EmailStr
+from fastapi import Form 
 
 #=========================================================
 # Проверка валидности при регистрации
@@ -6,9 +7,10 @@ from pydantic import BaseModel, EmailStr, Field
 
 class SUserRegister(BaseModel):
     """ Класс проверки валидности данных при регистрации """
-    email: EmailStr = Field(..., description="Электронная почта")
-    password: str = Field(..., min_length=5, max_length=15, description="Пароль, от 5 до 15 знаков")
-    username: str = Field(..., min_length=3, max_length=10, description="Username, от 3 до 10 символов")
+    email: EmailStr = Form(..., description="Электронная почта")
+    password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 5 до 15 знаков")
+    username: str = Form(..., min_length=3, max_length=15, description="Username, от 3 до 10 символов")
+    confirm_password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 5 до 15 знаков")
 
 #=========================================================
 # Проверка валидности при авторизации
@@ -16,5 +18,5 @@ class SUserRegister(BaseModel):
 
 class SUserAuth(BaseModel):
     """ Класс проверки валидности данных при авторизации """
-    email: EmailStr = Field(..., description="Электронная почта")
-    password: str = Field(..., min_length=5, max_length=15, description="Пароль, от 5 до 15 знаков")
+    email: EmailStr = Form(..., description="Электронная почта")
+    password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 5 до 15 знаков")
