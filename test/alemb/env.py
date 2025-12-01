@@ -4,86 +4,90 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.engine import Connection
 from alembic import context
 from alembic.config import Config
-import asyncio
 from app.database import DB_URL
+from app.migration.models import Base, User
+import asyncio
 
 from pathlib import Path
 from os.path import join
-
+# Получаем путь до папки с конфигом
 path_to_ini = str(Path(__file__).parent.parent)
-
-from app.migration.models import Base, User
 
 
 #=========================================================
 # Настройка логирования 
 #=========================================================
 
-# Берем текущий config - файл "alembic.ini"
+# Получаем config-файл
 config = Config(join(path_to_ini, "alembic.ini"))
-# Проверяем есть ли он
 if config.config_file_name is not None:
     # Настраиваем логирование в соответствии с параметрами в config
     fileConfig(config.config_file_name)
 
+#=========================================================
+# Метаданные моделей
+#=========================================================
+
+# Данные моделей для изменения структуры таблиц
 target_metadata = Base.metadata
 
 #=========================================================
 # Оффлайн режим
 #=========================================================
 
-def run_migrations_offline() -> None:
+def run_offline_migrations() -> None:
     """ 
     Функция для генерации SQL-скрипта без дальнейшего выполнения.
     Подключение к базе данных не происходит.
     """
-    # Настройка alembic для работы с базой
+    # Настройка alembic для работы с базой данных
     context.configure(
+        # Базы данных разные, поэтому url здесь нужен для определения базы данных текущего проекта
+        # Это не установка соединения с ней
         url=DB_URL,
         target_metadata=target_metadata,
         # Вставлять ли конкретные значения в sql-запрос или добавлять переменные?
-        literal_binds=True,
-        # Вид переменных в sql-запросе. В сочетании с literal_binds=True не играет роли
-        dialect_opts={"paramstyle": "named"},
+        literal_binds=True
     )
 
-    # Создается контекст транзакции для миграции. Это как бы оболочка для миграции
-    # Это значит, что все изменения, которые будут применяться, оборачиваются в эту транзакцию
-    # Если что-то пойдет не так, то транзакция откатится и база данных не пострадает
-    # После этого блока изменения либо применяются, либо откатываются с ошибкой
+    # Открытие транзакции для безопасной работы с базой данных
     with context.begin_transaction():
-        # Функция выполняет все миграции, которые не применены 
+        # Выполнение всех миграций, которые не применены 
         context.run_migrations()
 
 #=========================================================
 # Онлайн режим
 #=========================================================
 
-
-def do_run_migrations(connection: Connection) -> None:
-
+def do_migrations(connection: Connection) -> None:
+    """
+    Фунция для генерации SQL-скрипта и применения его к базе данных через соединение
+    
+    Входные данные:
+    connection: открытое соединение с базой данных
+    """
+    # Настройка alembic для работы с базой данных
+    # Измения применяются к переданному соединению
     context.configure(connection=connection, target_metadata=target_metadata)
 
+    # Применение миграций
     with context.begin_transaction():
         context.run_migrations()
 
+
 async def run_async_migrations() -> None:
     """ 
-    Функция для генерации и дальнейшего выполнения SQL-скрипта.
-    Происходит подключение к базе данных.
+    Функция для асинхронного соединения с базой данных.
+    После соединения применяет миграции.
     """
-    # Создается объект SQLAlchemy Engine 
-    # poolclass=pool.NullPool делает так, чтобы каждый раз создавалось новое соединение, а старое не сохранялось
+    # Создаем асинхронный движок для соединения с базой данных
     connectable = create_async_engine(DB_URL, poolclass=pool.NullPool)
-    # Создается соединение
+    # Создаем соединение
     async with connectable.connect() as connection:
-        # Настраиваем alembic для работы с базой
-        await connection.run_sync(do_run_migrations)
-
+        # Применяем миграции
+        await connection.run_sync(do_migrations)
+    # Выключаем движок
     await connectable.dispose()
-
-def run_migrations_online() -> None:
-    asyncio.run(run_async_migrations())
 
 
 #=========================================================
@@ -92,9 +96,9 @@ def run_migrations_online() -> None:
 
 def run_migration():
     if context.is_offline_mode():
-        run_migrations_offline()
+        run_offline_migrations()
     else:
-        print("TABLES FOUND:", target_metadata.tables.keys())
-        run_migrations_online()
+        # Асинхронный запуск миграций
+        asyncio.run(run_async_migrations())
 
-run_migration() 
+run_migration()
