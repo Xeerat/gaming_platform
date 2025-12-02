@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Главная страница</title>
+  <link rel="stylesheet" href="\static\style_mainPage.css">
+</head>
+<body>
+
+  {% if success %}
+  <div class="notification success">
+    <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+    {{ success }}
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="notification error">
+    <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+    {{ error }}
+  </div>
+  {% endif %}
+
+  <div class="content"></div>
+
+  <div class="sidebar">
+    <form id="deleteForm" action="/auth/del/" method="post"></form>
+    <button type="button" onclick="confirmDelete()">Удалить аккаунт</button>
+    
+    <button>Конструктор</button>
+    <button>Настройки</button>
+    <button onclick="confirmLogout()" class="logout-btn">Выход из аккаунта</button>
+  </div>
+
+  <script>
+  function confirmLogout() 
+  {
+      // Если пользователь нажал "OK"
+      if (confirm("Вы уверены, что хотите выйти?")) 
+      {
+        window.location.href = "/auth/logout/"; 
+      } 
+  }
+  </script>
+
+  <script>
+  function confirmDelete() 
+  {
+      if (confirm("Вы уверены, что хотите удалить пользователя?")) 
+      {
+        // Ищем элемент по id и отправляем запрос через него
+        document.getElementById('deleteForm').submit();
+      }
+  }
+  </script>
+</body>
+</html>
