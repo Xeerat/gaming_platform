@@ -24,6 +24,7 @@ DB_URL = get_database_url()
 #=========================================================
 
 def get_auth_data():
+    """ Функция возвращающая особые данные для генерации токена """
     key = getenv("SECRET_KEY")
     algorithm = getenv("ALGORITHM")
     return {"secret_key": key, "algorithm": algorithm}

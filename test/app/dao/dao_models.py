@@ -9,7 +9,7 @@ from app.database import DB_URL
 # Создание асинхронных сессий 
 #=========================================================
 
-# Создаем асинхронный движок для подключения к базе данных
+# Создаем асинхронный движок подключенный к базе данных
 engine = create_async_engine(DB_URL)
 # Создаем фабрику для создания асинхронных сессий
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
@@ -19,11 +19,10 @@ async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 #=========================================================
 
 class BaseDAO:
-    """ Класс представляющий базовое взаимодействие данными таблиц """
+    """ Класс представляющий базовое взаимодействие с данными таблиц """
     # У базовой DAO нет модели
     model = None
     
-    # Декоратор обозначает, что мы передаем не объект класса, а сам класс
     @classmethod
     async def find_one_or_none(cls, **filter_by):
         """ Функция для нахождения записи по критерию """
@@ -31,11 +30,12 @@ class BaseDAO:
         async with async_session_maker() as session:
             # sql-запрос вида: SELECT * FROM users WHERE
             query = select(cls.model).filter_by(**filter_by)
-            # Отправляем запрос в базу данных и ждем ответ не прирывая другие сессии
+            # Отправляем запрос в базу данных
             result = await session.execute(query)
             # Вернет либо один объект, либо None
             return result.scalar_one_or_none()
         
+
     @classmethod
     async def add(cls, **values):
         """ Функция для добавления нового объекта в базу данных """
@@ -53,6 +53,7 @@ class BaseDAO:
                 raise error
             # Для корректной работы id в таблице нужно возвращать объект
             return new_instance
+
 
     @classmethod
     async def update(cls, filter_by, **values):
@@ -75,6 +76,7 @@ class BaseDAO:
             # Возращает количество обновленных строк
             return result.rowcount
 
+
     @classmethod
     async def delete(cls, delete_all: bool = False, **filter_by):
         """ Функция для удаления объектов из базы данных """
@@ -82,7 +84,7 @@ class BaseDAO:
             raise ValueError("Необходимо указать хотя бы один параметр для удаления.")
 
         async with async_session_maker() as session:
-            # DELETE FROM users WHERE username='maria' AND active=false;
+            # DELETE FROM users WHERE username='maria'
             query = sqlalchemy_delete(cls.model).filter_by(**filter_by)
             result = await session.execute(query)
             try:

@@ -8,9 +8,9 @@ from fastapi import Form
 class SUserRegister(BaseModel):
     """ Класс проверки валидности данных при регистрации """
     email: EmailStr = Form(..., description="Электронная почта")
-    password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 5 до 15 знаков")
-    username: str = Form(..., min_length=3, max_length=15, description="Username, от 3 до 10 символов")
-    confirm_password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 5 до 15 знаков")
+    password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 8 до 15 знаков")
+    username: str = Form(..., min_length=3, max_length=15, description="Username, от 3 до 15 символов")
+    confirm_password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 8 до 15 знаков")
 
 #=========================================================
 # Проверка валидности при авторизации
@@ -19,4 +19,4 @@ class SUserRegister(BaseModel):
 class SUserAuth(BaseModel):
     """ Класс проверки валидности данных при авторизации """
     email: EmailStr = Form(..., description="Электронная почта")
-    password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 5 до 15 знаков")
+    password: str = Form(..., min_length=8, max_length=15, description="Пароль, от 8 до 15 знаков")
