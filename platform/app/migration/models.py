@@ -25,6 +25,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str]
+    is_verified: Mapped[bool] = mapped_column(default=False, server_default=text('false'), nullable=False)
     register_at: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
     # Говорим, что нужно менять существующую таблицу, а не создавать новую
     extend_existing = True

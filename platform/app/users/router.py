@@ -1,10 +1,15 @@
-from fastapi import APIRouter, Response, Form, Request
+from fastapi import APIRouter, Response, Form, Request, Depends
 from fastapi.responses import RedirectResponse
 from pydantic import EmailStr
 
 from app.dao.dao_models import UsersDAO
 from app.users.validation import SUserRegister, SUserAuth
 import app.users.auth as auth
+
+from app.users.dependencies import get_current_user, User, get_auth_data
+
+
+from jose import jwt, JWTError
 
 
 # Создаем объект, который будет содержать все маршруты
@@ -62,17 +67,21 @@ async def register_user(
     del user_dict["confirm_password"]
     # Хешируем пароль
     user_dict['password'] = auth.get_password_hash(user_data.password)
-    # Добавляем нового пользователя
+    # После добавления пользователя в базу
     user = await UsersDAO.add(**user_dict)
-    # Создаем ему токен
+
+    # 1. Генерация токена для подтверждения email
+    email_token = auth.generate_email_token(user.email)
+
+    # 2. Отправка письма с токеном
+    auth.send_verification_email(user.email, email_token)
+
+    # 3. Создание access_token для cookie (если логиним сразу)
     access_token = auth.create_access_token({"sub": str(user.id), "email": user.email})
-    
-    # Создаем успешный переход на главную страницу
     response = RedirectResponse(
         url="/main/?success=Вы+успешно+зарегистрированы!", 
         status_code=303
     )
-    # Добавляем токен в cookie
     response.set_cookie(key="users_access_token", value=access_token, httponly=True)
     return response
 
@@ -169,3 +178,27 @@ async def dell_user(request: Request):
     response.delete_cookie(key="users_access_token")
     return response
     
+
+
+
+@router.get("/verify-email")
+async def verify_email(token: str):
+    auth_data = get_auth_data()
+    try:
+        data = jwt.decode(token, auth_data["secret_key"], algorithms=[auth_data["algorithm"]])
+        email = data["email"]
+
+        # Обновляем поле is_verified = True
+        success = await auth.mark_user_email_verified(email)
+
+        if success:
+            return {"message": "Email успешно подтверждён!"}
+        else:
+            return {"error": "Пользователь не найден"}
+
+    except jwt.ExpiredSignatureError:
+        return {"error": "Ссылка устарела"}
+
+    except JWTError:
+        return {"error": "Неверный токен"}
+

@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from users.router import router as router_users
+from app.users.router import router as router_users
 
 #=========================================================
 # Проверка валидности при регистрации
@@ -19,9 +19,9 @@ app = FastAPI()
 # Подключаем все маршруты пользователя к главному объекту 
 app.include_router(router_users)
 # Добавляем статические файлы на сайт
-app.mount('/static', StaticFiles(directory="site/static"), name="static")
+app.mount('/static', StaticFiles(directory="app/site/static"), name="static")
 # Показываем где искать HTML файлы
-templates = Jinja2Templates(directory="site/templates")
+templates = Jinja2Templates(directory="app/site/templates")
 
 #=========================================================
 # Страница регистрации
